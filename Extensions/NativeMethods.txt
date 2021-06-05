@@ -1,0 +1,5 @@
+﻿GetStdHandle
+GetConsoleMode
+SetConsoleMode
+GetCurrentThread
+SetThreadAffinityMask
