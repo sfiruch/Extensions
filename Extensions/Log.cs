@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.Win32.SafeHandles;
 using Microsoft.Windows.Sdk;
 
-class Log
+public class Log
 {
     public static readonly bool VTEnabled;
     public static bool VerboseEnabled = true;
@@ -28,33 +28,33 @@ class Log
             VTEnabled = !Console.IsOutputRedirected;
     }
 
-    internal static void SetTitle(string _x)
+    public static void SetTitle(string _x)
     {
         Console.Title = _x;
     }
 
-    internal static void WriteLine() => WriteLine("");
-    internal static void WriteLine(object? _o) => WriteLine(_o?.ToString());
-    internal static void WriteLine(string? _x)
+    public static void WriteLine() => WriteLine("");
+    public static void WriteLine(object? _o) => WriteLine(_o?.ToString());
+    public static void WriteLine(string? _x)
     {
         Console.WriteLine(_x);
     }
 
-    internal static void VerboseLine() => VerboseLine("");
-    internal static void VerboseLine(object? _o) => VerboseLine($"{_o}");
-    internal static void VerboseLine(string? _x)
+    public static void VerboseLine() => VerboseLine("");
+    public static void VerboseLine(object? _o) => VerboseLine($"{_o}");
+    public static void VerboseLine(string? _x)
     {
         if (VerboseEnabled)
             Console.WriteLine($"       > {_x}".StyleDarkYellow());
     }
 
     [Conditional("DEBUG")]
-    internal static void Debug(string _x)
+    public static void Debug(string _x)
     {
         Console.WriteLine(_x);
     }
 
-    internal static void LimitOutputTo(int? _lines = null)
+    public static void LimitOutputTo(int? _lines = null)
     {
         if (!VTEnabled)
             return;
@@ -110,7 +110,7 @@ class Log
         private static string Format(TimeSpan _ts) =>
             $"{(int)_ts.TotalMinutes,5}:{_ts:ss\\.f}";
 
-        private void WriteHeader()
+        public void WriteHeader()
         {
             Log.WriteLine(string.Join(" ", Headers.Select(h => h.PadRight(10)))
                 .StyleBrightCyan()

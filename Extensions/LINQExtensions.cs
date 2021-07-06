@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-static class LINQExtensions
+public static class LINQExtensions
 {
     private static int MurmurHash(int _input)
     {
