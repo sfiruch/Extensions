@@ -84,6 +84,26 @@ public static class GurobiExtensions
         _m.AddConstr(_constr, null);
     }
 
+    public static void AddGenConstrIndicator(this GRBModel _m, GRBVar _binvar, int _binval, GRBTempConstr _constr)
+    {
+        _m.AddGenConstrIndicator(_binvar, _binval, _constr, null);
+    }
+
+    public static void AddGenConstrAnd(this GRBModel _m, GRBVar _resvar, GRBVar[] _vars)
+    {
+        _m.AddGenConstrAnd(_resvar, _vars, null);
+    }
+
+    public static void AddGenConstrOr(this GRBModel _m, GRBVar _resvar, GRBVar[] _vars)
+    {
+        _m.AddGenConstrOr(_resvar, _vars, null);
+    }
+
+    public static void AddGenConstrAbs(this GRBModel _m, GRBVar _resvar, GRBVar _argvar)
+    {
+        _m.AddGenConstrAbs(_resvar, _argvar, null);
+    }
+
     public static void AddQConstr(this GRBModel _m, GRBTempConstr _constr)
     {
         _m.AddQConstr(_constr, null);

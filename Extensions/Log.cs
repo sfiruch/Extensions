@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -84,61 +85,91 @@ public class Log
     public class Table
     {
         internal string[] Headers;
-        internal int Lines = 0;
+        internal int[] Widths;
+        internal bool[] BoldColumns;
+        public int WrittenLines { get; private set; } = 0;
+        public int RepeatHeaderEvery { get; init; } = 0;
 
-        public Table(string[] _headers)
+        public Table(IEnumerable<string> _headers, IEnumerable<int>? _widths = null, IEnumerable<bool>? _boldColumns = null)
         {
-            Headers = _headers;
+            Headers = _headers.ToArray();
+
+            if (_widths is null)
+                Widths = Headers.Select(h => Math.Max(10, h.Length)).ToArray();
+            else
+                Widths = _widths.Select(w => Math.Max(10, w)).ToArray();
+
+            if (_boldColumns is null)
+                BoldColumns = new bool[Headers.Length];
+            else
+                BoldColumns = _boldColumns.ToArray();
+
+            if (Widths.Length != Headers.Length)
+                throw new ArgumentException(nameof(_widths));
+            if (BoldColumns.Length != Headers.Length)
+                throw new ArgumentException(nameof(_boldColumns));
         }
 
-        private static string Format(long _x) => _x switch
+        private static string Format(long _x, int _width) => _x switch
         {
-            >= 100000000 => $"{_x,10:0.00e0}",
-            <= -10000000 => $"{_x,10:0.00e0}",
-            _ => $"{_x,10:#,0}"
+            >= 100000000 => $"{_x,10:0.00e0}".PadLeft(_width),
+            <= -10000000 => $"{_x,10:0.00e0}".PadLeft(_width),
+            _ => $"{_x,10:#,0}".PadLeft(_width)
         };
 
-        private static string Format(ulong _x) => _x switch
+        private static string Format(ulong _x, int _width) => _x switch
         {
-            >= 100000000 => $"{_x,10:0.00e0}",
-            _ => $"{_x,10:#,0}"
+            >= 100000000 => $"{_x,10:0.00e0}".PadLeft(_width),
+            _ => $"{_x,10:#,0}".PadLeft(_width)
         };
 
-        private static string Format(string _s) =>
-            _s.Length > 10 ? _s[0..9] + "…" : _s.PadRight(10);
+        private static string Format(string _s, int _width) =>
+            _s.Length > _width ? _s[0..(_width - 1)] + "…" : _s.PadRight(_width);
 
-        private static string Format(TimeSpan _ts) =>
-            $"{(int)_ts.TotalMinutes,5}:{_ts:ss\\.f}";
+        private static string Format(TimeSpan _ts, int _width) =>
+            $"{(int)_ts.TotalMinutes,5}:{_ts:ss\\.f}".PadLeft(_width);
 
         public void WriteHeader()
         {
-            Log.WriteLine(string.Join(" ", Headers.Select(h => h.PadRight(10)))
+            Log.WriteLine(string.Join(" ", Headers.Select((h, i) => Format(h, Widths[i])))
                 .StyleBrightCyan()
                 .StyleUnderline());
         }
 
-        public void WriteLine(params object[] _data)
+        public void WriteLine(params object?[] _data) =>
+            WriteLineFormatted(false, _data);
+
+        public void WriteBoldLine(params object?[] _data) =>
+            WriteLineFormatted(true, _data);
+
+        private void WriteLineFormatted(bool _boldLine, params object?[] _data)
         {
-            if ((Lines % 50) == 0)
+            if (WrittenLines == 0 || (RepeatHeaderEvery > 0 && (WrittenLines % RepeatHeaderEvery) == 0))
                 WriteHeader();
 
-            Log.WriteLine(string.Join(" ", _data.Select(o => (o switch
+            Log.WriteLine(string.Join(" ", _data.Select((o, i) =>
             {
-                short x => Format(x),
-                ushort x => Format(x),
-                int x => Format(x),
-                uint x => Format(x),
-                long x => Format(x),
-                ulong x => Format(x),
-                byte x => Format(x),
-                sbyte x => Format(x),
-                null => "".PadLeft(10),
-                string s => Format(s),
-                TimeSpan ts => Format(ts),
-                _ => o?.ToString()
-            }))));
+                var res = o switch
+                {
+                    short x => Format(x, Widths[i]),
+                    ushort x => Format(x, Widths[i]),
+                    int x => Format(x, Widths[i]),
+                    uint x => Format(x, Widths[i]),
+                    long x => Format(x, Widths[i]),
+                    ulong x => Format(x, Widths[i]),
+                    byte x => Format(x, Widths[i]),
+                    sbyte x => Format(x, Widths[i]),
+                    null => "".PadLeft(Widths[i]),
+                    string s => Format(s, Widths[i]),
+                    TimeSpan ts => Format(ts, Widths[i]),
+                    _ => Format(o?.ToString() ?? "", Widths[i])
+                };
+                if (BoldColumns[i] || _boldLine)
+                    res = res.StyleBold();
+                return res;
+            })));
 
-            Lines++;
+            WrittenLines++;
         }
     }
 }

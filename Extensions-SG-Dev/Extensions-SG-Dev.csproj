@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Gurobi91.NET">
-      <HintPath>..\..\..\..\..\..\Program Files\Gurobi\9.1.1\win64\bin\Gurobi91.NET.dll</HintPath>
+    <Reference Include="gurobi91.netstandard20">
+      <HintPath>..\..\..\..\..\..\Program Files\Gurobi\9.1.2\win64\lib\gurobi91.netstandard20.dll</HintPath>
     </Reference>
   </ItemGroup>
 
