@@ -124,7 +124,7 @@ public class Log
         };
 
         private static string Format(string _s, int _width) =>
-            _s.Length > _width ? _s[0..(_width - 1)] + "…" : _s.PadRight(_width);
+            _s.FixLengthToAndKeepFormatting(_width);
 
         private static string Format(TimeSpan _ts, int _width) =>
             $"{(int)_ts.TotalMinutes,5}:{_ts:ss\\.f}".PadLeft(_width);
