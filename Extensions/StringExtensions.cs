@@ -47,7 +47,7 @@ public static class StringExtensions
         if (len == _length)
             return _s;
         else if (len < _length)
-            return _s.PadRight(_length);
+            return _s + new string(' ', _length - len);
         
         var res=new StringBuilder();
         {
