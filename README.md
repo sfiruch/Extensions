@@ -12,7 +12,6 @@ Add a reference to the NuGet Package [deiruch.Extensions](https://www.nuget.org/
 - Console output
   - VT-100 formatting
   - Histograms
-  - 
 - LINQ extensions
 - .NET6 xoshiro256** Random
 - Vector3 extensions
