@@ -1,9 +1,6 @@
-﻿using Gurobi;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
 namespace Gurobi
@@ -27,6 +24,7 @@ namespace Gurobi
         public new double GetSolution(GRBVar _v) => base.GetSolution(_v);
         public new double UseSolution() => base.UseSolution();
         public new void SetSolution(GRBVar _v, double _val) => base.SetSolution(_v, _val);
+        public new void SetSolution(GRBVar[] _v, double[] _val) => base.SetSolution(_v, _val);
         public new string GetStringInfo(int _what) => base.GetStringInfo(_what);
         public new double GetDoubleInfo(int _what) => base.GetDoubleInfo(_what);
         public new double GetIntInfo(int _what) => base.GetIntInfo(_what);

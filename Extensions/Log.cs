@@ -112,9 +112,16 @@ public class Log
 
         private static string Format(long _x, int _width) => _x switch
         {
-            >= 100000000 => $"{_x,10:0.00e0}".PadLeft(_width),
-            <= -10000000 => $"{_x,10:0.00e0}".PadLeft(_width),
+            >= 100000000 or <= -10000000 => $"{_x,10:0.00e0}".PadLeft(_width),
             _ => $"{_x,10:#,0}".PadLeft(_width)
+        };
+
+        private string Format(double _x, int _width) => _x switch
+        {
+            0 => "0.0000".PadLeft(_width),
+            >= 100000000 or <= -10000000 => $"{_x,10:0.00e0}".PadLeft(_width),
+            > -0.0002 and < 0.0002 => $"{_x,10:0.00e0}".PadLeft(_width),
+            _ => $"{_x,10:0.000,0}".PadLeft(_width)
         };
 
         private static string Format(ulong _x, int _width) => _x switch
@@ -159,6 +166,8 @@ public class Log
                     ulong x => Format(x, Widths[i]),
                     byte x => Format(x, Widths[i]),
                     sbyte x => Format(x, Widths[i]),
+                    float x => Format(x, Widths[i]),
+                    double x => Format(x, Widths[i]),
                     null => "".PadLeft(Widths[i]),
                     string s => Format(s, Widths[i]),
                     TimeSpan ts => Format(ts, Widths[i]),
