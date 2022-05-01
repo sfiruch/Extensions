@@ -21,14 +21,14 @@ namespace Gurobi
             get => base.where;
         }
 
-        public new double GetSolution(GRBVar _v) => base.GetSolution(_v);
+        public new double GetSolution(GRBVar _v) => (where == GRB.Callback.MIPSOL || where == GRB.Callback.MULTIOBJ) ? base.GetSolution(_v) : base.GetNodeRel(_v);
         public new double UseSolution() => base.UseSolution();
         public new void SetSolution(GRBVar _v, double _val) => base.SetSolution(_v, _val);
         public new void SetSolution(GRBVar[] _v, double[] _val) => base.SetSolution(_v, _val);
         public new string GetStringInfo(int _what) => base.GetStringInfo(_what);
         public new double GetDoubleInfo(int _what) => base.GetDoubleInfo(_what);
         public new double GetIntInfo(int _what) => base.GetIntInfo(_what);
-        public new double GetNodeRel(GRBVar _v) => base.GetNodeRel(_v);
+        public new double GetNodeRel(GRBVar _v) => (where == GRB.Callback.MIPSOL || where == GRB.Callback.MULTIOBJ) ? base.GetSolution(_v) : base.GetNodeRel(_v);
         public new void Abort() => base.Abort();
 
         protected override void Callback() => cb(this);

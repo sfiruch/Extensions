@@ -83,9 +83,54 @@ public static class LINQExtensions
             totalCount++;
         }
 
-        return System.Math.Exp(totalSum / totalCount);
+        return Math.Exp(totalSum / totalCount);
     }
 
+    /// <summary>
+    /// Computes the median
+    /// </summary>
+    /// <param name="_source"></param>
+    /// <returns></returns>
+    public static double Median(this IEnumerable<int> _source)
+    {
+        var data = _source.OrderBy(n => n).ToArray();
+        if ((data.Length & 1) == 0)
+            return 0.5 * (data[data.Length / 2 - 1] + data[data.Length / 2]);
+        else
+            return data[data.Length / 2];
+    }
+
+    /// <summary>
+    /// Computes the median
+    /// </summary>
+    /// <param name="_source"></param>
+    /// <returns></returns>
+    public static float Median(this IEnumerable<float> _source)
+    {
+        var data = _source.OrderBy(n => n).ToArray();
+        if ((data.Length & 1) == 0)
+            return 0.5f * (data[data.Length / 2 - 1] + data[data.Length / 2]);
+        else
+            return data[data.Length / 2];
+    }
+
+    /// <summary>
+    /// Computes the median
+    /// </summary>
+    /// <param name="_source"></param>
+    /// <returns></returns>
+    public static double Median(this IEnumerable<double> _source)
+    {
+        var data = _source.OrderBy(n => n).ToArray();
+        if ((data.Length & 1) == 0)
+            return 0.5 * (data[data.Length / 2 - 1] + data[data.Length / 2]);
+        else
+            return data[data.Length / 2];
+    }
+
+    public static double Median<TSource>(this IEnumerable<TSource> _source, Func<TSource, int> _selector) => _source.Select(_selector).Median();
+    public static float Median<TSource>(this IEnumerable<TSource> _source, Func<TSource, float> _selector) => _source.Select(_selector).Median();
+    public static double Median<TSource>(this IEnumerable<TSource> _source, Func<TSource, double> _selector) => _source.Select(_selector).Median();
 
     /// <summary>
     /// Combines multiple arrays into one big array.
