@@ -82,6 +82,58 @@ public class Log
         }
     }
 
+    public class MultiLine
+    {
+        private List<Line> Lines = new();
+
+        public Line AddLine(string _text="")
+        {
+            var before = Console.CursorTop;
+            Console.WriteLine(_text);
+            var after = Console.CursorTop;
+
+            if(before==after)
+            {
+                foreach (var line in Lines)
+                    line.Y--;
+            }
+
+            var l = new Line(after-1);
+            Lines.Add(l);
+            return l;
+        }
+
+        public class Line
+        {
+            internal int Y;
+
+            internal Line(int _y)
+            {
+                Y = _y;
+            }
+
+            public string Text
+            {
+                set
+                {
+                    if (!VTEnabled)
+                    {
+                        Console.WriteLine(value);
+                        return;
+                    }
+
+                    var before = Console.GetCursorPosition();
+
+                    Console.CursorTop = Y;
+                    Console.CursorLeft = 0;
+                    Console.Write($"\u001b[2K\u001b[?7l{value}\u001b[?7h");
+
+                    Console.SetCursorPosition(before.Left, before.Top);
+                }
+            }
+        }
+    }
+
     public class Table
     {
         internal string[] Headers;
