@@ -85,22 +85,26 @@ public class Log
     public class MultiLine
     {
         private List<Line> Lines = new();
+        private static object ConsoleLock = new();
 
         public Line AddLine(string _text="")
         {
-            var before = Console.CursorTop;
-            Console.WriteLine(_text);
-            var after = Console.CursorTop;
-
-            if(before==after)
+            lock (ConsoleLock)
             {
-                foreach (var line in Lines)
-                    line.Y--;
-            }
+                var before = Console.CursorTop;
+                Console.WriteLine(_text);
+                var after = Console.CursorTop;
 
-            var l = new Line(after-1);
-            Lines.Add(l);
-            return l;
+                if (before == after)
+                {
+                    foreach (var line in Lines)
+                        line.Y--;
+                }
+
+                var l = new Line(after - 1);
+                Lines.Add(l);
+                return l;
+            }
         }
 
         public class Line
@@ -116,19 +120,22 @@ public class Log
             {
                 set
                 {
-                    if (!VTEnabled)
+                    lock (ConsoleLock)
                     {
-                        Console.WriteLine(value);
-                        return;
+                        if (!VTEnabled)
+                        {
+                            Console.WriteLine(value);
+                            return;
+                        }
+
+                        var before = Console.GetCursorPosition();
+
+                        Console.CursorTop = Y;
+                        Console.CursorLeft = 0;
+                        Console.Write($"\u001b[2K\u001b[?7l{value}\u001b[?7h");
+
+                        Console.SetCursorPosition(before.Left, before.Top);
                     }
-
-                    var before = Console.GetCursorPosition();
-
-                    Console.CursorTop = Y;
-                    Console.CursorLeft = 0;
-                    Console.Write($"\u001b[2K\u001b[?7l{value}\u001b[?7h");
-
-                    Console.SetCursorPosition(before.Left, before.Top);
                 }
             }
         }
