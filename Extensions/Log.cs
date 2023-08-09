@@ -87,22 +87,19 @@ public class Log
         private List<Line> Lines = new();
         private static object ConsoleLock = new();
 
-        public Line AddLine(string _text="")
+        public Line AddLine(string _text = "")
         {
             lock (ConsoleLock)
             {
-                var before = Console.CursorTop;
                 Console.WriteLine(_text);
                 var after = Console.CursorTop;
 
-                if (before == after)
-                {
-                    foreach (var line in Lines)
-                        line.Y--;
-                }
-
-                var l = new Line(after - 1);
+                var l = new Line();
                 Lines.Add(l);
+
+                for (var i = 0; i < Lines.Count; i++)
+                    Lines[i].Y = Math.Min(0, after - Lines.Count + i);
+
                 return l;
             }
         }
@@ -110,11 +107,6 @@ public class Log
         public class Line
         {
             internal int Y;
-
-            internal Line(int _y)
-            {
-                Y = _y;
-            }
 
             public string Text
             {
