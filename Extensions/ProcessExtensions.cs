@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 
 public static class ProcessExtensions
 {
+    [DllImport("libc.so.6", SetLastError = true)]
+    private static extern int sched_setaffinity(int pid, IntPtr cpusetsize, ulong[] cpuset);
+
     public static TimeSpan Time
     {
         get => Process.GetCurrentProcess().TotalProcessorTime;
@@ -23,14 +26,31 @@ public static class ProcessExtensions
         if (_core < 0 || _core >= 64)
             throw new ArgumentOutOfRangeException(nameof(_core));
 
-        if (PInvoke.SetThreadAffinityMask(new UnownedSafeHandle(PInvoke.GetCurrentThread()), 1u << _core) == 0)
-            throw new Win32Exception();
+        Thread.BeginThreadAffinity();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            if (PInvoke.SetThreadAffinityMask(new UnownedSafeHandle(PInvoke.GetCurrentThread()), 1u << _core) == 0)
+                throw new Win32Exception();
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            sched_setaffinity(0, new IntPtr(sizeof(ulong)), new[] { (1uL << _core) });
+        }
     }
 
     public static void AssignCurrentThreadToAllCores()
     {
-        if (PInvoke.SetThreadAffinityMask(new UnownedSafeHandle(PInvoke.GetCurrentThread()), nuint.MaxValue) == 0)
-            throw new Win32Exception();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            if (PInvoke.SetThreadAffinityMask(new UnownedSafeHandle(PInvoke.GetCurrentThread()), nuint.MaxValue) == 0)
+                throw new Win32Exception();
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            sched_setaffinity(0, new IntPtr(sizeof(ulong)), new[] { ulong.MaxValue });
+        }
+
+        Thread.EndThreadAffinity();
     }
 
     private static long tempFilenameCounter = 0;
