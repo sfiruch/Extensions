@@ -218,46 +218,46 @@ namespace Extensions
             throw new NotImplementedException();
         }
 
-        static bool INumberBase<Fraction>.TryConvertFromChecked<TOther>(TOther value, out Fraction result)
+        static bool TryConvertFromChecked<TOther>(TOther value, out Fraction result)
         {
             if (typeof(TOther) == typeof(double))
             {
-                result = (Fraction)((double)((Half)(object)value));
+                result = (Fraction)((double)((Half)(object)value!));
                 return true;
             }
             else if (typeof(TOther) == typeof(Half))
             {
-                result = (Fraction)((double)((Half)(object)value));
+                result = (Fraction)((double)((Half)(object)value!));
                 return true;
             }
             else if (typeof(TOther) == typeof(short))
             {
-                result = (short)(object)value;
+                result = (short)(object)value!;
                 return true;
             }
             else if (typeof(TOther) == typeof(long))
             {
-                result = (long)(object)value;
+                result = (long)(object)value!;
                 return true;
             }
             else if (typeof(TOther) == typeof(Int128))
             {
-                result = (Int128)(object)value;
+                result = (Int128)(object)value!;
                 return true;
             }
             else if (typeof(TOther) == typeof(nint))
             {
-                result = (long)((nint)(object)value);
+                result = (long)((nint)(object)value!);
                 return true;
             }
             else if (typeof(TOther) == typeof(sbyte))
             {
-                result = (sbyte)(object)value;
+                result = (sbyte)(object)value!;
                 return true;
             }
             else if (typeof(TOther) == typeof(float))
             {
-                result = (float)(object)value;
+                result = (float)(object)value!;
                 return true;
             }
             else
@@ -266,6 +266,8 @@ namespace Extensions
                 return false;
             }
         }
+
+        static bool INumberBase<Fraction>.TryConvertFromChecked<TOther>(TOther value, out Fraction result) => TryConvertFromChecked(value, out result);
 
         static bool INumberBase<Fraction>.TryConvertFromSaturating<TOther>(TOther value, out Fraction result) => TryConvertFromChecked(value, out result);
 

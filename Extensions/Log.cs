@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
@@ -13,7 +14,13 @@ public class Log
 
     static Log()
     {
-        Console.OutputEncoding = Encoding.UTF8;
+        try
+        {
+            Console.OutputEncoding = Encoding.UTF8;
+        }
+        catch (IOException)
+        {
+        }
 
         if (Environment.OSVersion.Platform == PlatformID.Win32NT)
         {
@@ -31,7 +38,30 @@ public class Log
 
     public static void SetTitle(string _x)
     {
-        Console.Title = _x;
+        try
+        {
+            Console.Title = _x;
+        }
+        catch (IOException)
+        {
+        }
+    }
+
+    public static float Progress
+    {
+        set
+        {
+            if (value < 0 || value > 1)
+                throw new ArgumentOutOfRangeException();
+
+            if (!VTEnabled)
+                return;
+
+            if (value == 1)
+                Console.Write("\x1b]9;4;0;100\x07");
+            else
+                Console.Write($"\x1b]9;4;1;{(int)(value * 99)}\x07");
+        }
     }
 
     public static void WriteLine() => WriteLine("");
@@ -124,6 +154,7 @@ public class Log
 
                         Console.CursorTop = Y;
                         Console.CursorLeft = 0;
+
                         Console.Write($"\u001b[2K\u001b[?7l{value}\u001b[?7h");
 
                         Console.SetCursorPosition(before.Left, before.Top);

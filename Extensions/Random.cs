@@ -35,18 +35,16 @@ public class Random
 
     public Random()
     {
-        Span<byte> buf = stackalloc byte[8 * 4];
-        using (RNGCryptoServiceProvider cryptoRng = new RNGCryptoServiceProvider())
-            do
-            {
-                cryptoRng.GetBytes(buf);
+        do
+        {
+            var buf = RandomNumberGenerator.GetBytes(8 * 4);
 
-                _s0 = BitConverter.ToUInt64(buf[0..8]);
-                _s1 = BitConverter.ToUInt64(buf[8..16]);
-                _s2 = BitConverter.ToUInt64(buf[16..24]);
-                _s3 = BitConverter.ToUInt64(buf[24..32]);
-            }
-            while ((_s0 | _s1 | _s2 | _s3) == 0); // at least one value must be non-zero
+            _s0 = BitConverter.ToUInt64(buf[0..8]);
+            _s1 = BitConverter.ToUInt64(buf[8..16]);
+            _s2 = BitConverter.ToUInt64(buf[16..24]);
+            _s3 = BitConverter.ToUInt64(buf[24..32]);
+        }
+        while ((_s0 | _s1 | _s2 | _s3) == 0); // at least one value must be non-zero
     }
 
     public Random(ulong _seed)

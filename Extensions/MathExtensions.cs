@@ -18,5 +18,5 @@ public static class MathExtensions
     /// </summary>
     /// <param name="value"></param>
     /// <returns></returns>
-    public static double Sigmoid(double value) => 1.0 / (1.0 + System.Math.Exp(-value));
+    public static double Sigmoid(double value) => 1.0 / (1.0 + Math.Exp(-value));
 }

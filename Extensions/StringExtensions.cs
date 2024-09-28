@@ -26,7 +26,8 @@ public static class StringExtensions
     [return: NotNullIfNotNull("_s")] public static string? StyleBrightWhite(this string? _s) => Log.VTEnabled ? $"\u001b[97m{_s}\u001b[39m" : _s;
 
     [return: NotNullIfNotNull("_s")] public static string? StyleUnderline(this string? _s) => Log.VTEnabled ? $"\u001b[4m{_s}\u001b[24m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleBold(this string? _s) => Log.VTEnabled ? $"\u001b[1m{_s}\u001b[22m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleBold(this string? _s) => Log.VTEnabled ? $"\u001b[1m{_s}\u001b[21m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleItalic(this string? _s) => Log.VTEnabled ? $"\u001b[3m{_s}\u001b[23m" : _s;
 
     public static string FixLengthToAndKeepFormatting(this string _s, int _length)
     {

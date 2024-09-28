@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Gurobi95.NET">
-      <HintPath>..\..\..\..\..\..\Program Files\Gurobi\9.5.0\win64\bin\Gurobi95.NET.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Gurobi.Optimizer" Version="11.0.3" />
   </ItemGroup>
 
 </Project>
