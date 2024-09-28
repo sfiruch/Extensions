@@ -20,7 +20,7 @@ namespace Extensions
         };
 
         private static void Log(string _s)
-            => Console.WriteLine($"[GC] {_s}".StyleBrightYellow().StyleItalic());
+            => Console.WriteLine($"[GC] {_s}".StyleBrightYellow().Style(_italic: true));
 
         static MemoryConsoleLogger()
         {

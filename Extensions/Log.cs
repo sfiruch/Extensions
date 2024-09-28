@@ -58,9 +58,9 @@ public class Log
                 return;
 
             if (value == 1)
-                Console.Write("\x1b]9;4;0;100\x07");
+                Console.Write("\u001b]9;4;0;100\x07");
             else
-                Console.Write($"\x1b]9;4;1;{(int)(value * 99)}\x07");
+                Console.Write($"\u001b]9;4;1;{(int)(value * 99)}\x07");
         }
     }
 
@@ -222,7 +222,7 @@ public class Log
         {
             Log.WriteLine(string.Join(" ", Headers.Select((h, i) => Format(h, Widths[i])))
                 .StyleBrightCyan()
-                .StyleUnderline());
+                .Style(_underline: true));
         }
 
         public void WriteLine(params object?[] _data) =>
@@ -256,7 +256,7 @@ public class Log
                     _ => Format(o?.ToString() ?? "", Widths[i])
                 };
                 if (BoldColumns[i] || _boldLine)
-                    res = res.StyleBold();
+                    res = res.Style(_bold: true);
                 return res;
             })));
 

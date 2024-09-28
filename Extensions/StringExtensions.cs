@@ -25,9 +25,7 @@ public static class StringExtensions
     [return: NotNullIfNotNull("_s")] public static string? StyleBrightCyan(this string? _s) => Log.VTEnabled ? $"\u001b[96m{_s}\u001b[39m" : _s;
     [return: NotNullIfNotNull("_s")] public static string? StyleBrightWhite(this string? _s) => Log.VTEnabled ? $"\u001b[97m{_s}\u001b[39m" : _s;
 
-    [return: NotNullIfNotNull("_s")] public static string? StyleUnderline(this string? _s) => Log.VTEnabled ? $"\u001b[4m{_s}\u001b[24m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleBold(this string? _s) => Log.VTEnabled ? $"\u001b[1m{_s}\u001b[21m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleItalic(this string? _s) => Log.VTEnabled ? $"\u001b[3m{_s}\u001b[23m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? Style(this string? _s, bool _underline = false, bool _italic = false, bool _bold = false, bool _strikethrough = false) => Log.VTEnabled ? $"\u001b[{(_bold ? "1" : "")}{(_underline ? "4" : "")}{(_italic ? "3" : "")}{(_strikethrough ? "9" : "")}m{_s}\u001b[m" : _s;
 
     public static string FixLengthToAndKeepFormatting(this string _s, int _length)
     {
@@ -49,8 +47,8 @@ public static class StringExtensions
             return _s;
         else if (len < _length)
             return _s + new string(' ', _length - len);
-        
-        var res=new StringBuilder();
+
+        var res = new StringBuilder();
         {
             var resLen = 0;
             var inVT = false;
