@@ -27,32 +27,6 @@ public static class LINQExtensions
         }
     }
 
-    public static void ShuffleInPlace<T>(this IList<T> _source, int _seed = 0)
-    {
-        var rng = new Random((ulong)_seed);
-        for (var i = _source.Count - 1; i > 0; i--)
-        {
-            var r = rng.Next(i + 1);
-            (_source[i], _source[r]) = (_source[r], _source[i]);
-        }
-    }
-
-    public static void ShuffleInPlace<T>(this T[] _source, int _seed = 0)
-    {
-        var rng = new Random((ulong)0);
-        for (var i = _source.Length - 1; i > 0; i--)
-        {
-            var r = rng.Next(i + 1);
-            (_source[i], _source[r]) = (_source[r], _source[i]);
-        }
-    }
-
-    public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> _source, int _seed = 0) =>
-        _source
-        .Select((o, idx) => (Object: o, PseudoRandom: MurmurHash(idx + _seed)))
-        .OrderBy(t => t.PseudoRandom)
-        .Select(t => t.Object);
-
     public static T RandomElement<T>(this IList<T> _source, Random _rng)
         => _source[_rng.Next(_source.Count)];
 

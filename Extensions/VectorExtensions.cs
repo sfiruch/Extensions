@@ -6,7 +6,7 @@ public static class VectorExtensions
     public static (byte R, byte G, byte B) ToSRGB(this in Vector3 _c)
     {
         const float GAMMA = 1 / 2.2f;
-        var rngLocal = Random.ThreadLocal;
+        var rngLocal = Random.Shared;
         return (
             (byte)Math.Min(255, MathF.Pow(_c.X, GAMMA) * 255f + rngLocal.NextDouble()),
             (byte)Math.Min(255, MathF.Pow(_c.Y, GAMMA) * 255f + rngLocal.NextDouble()),

@@ -13,7 +13,6 @@ Add a reference to the NuGet Package [sfiruch.Extensions](https://www.nuget.org/
   - VT-100 formatting
   - Histograms
 - LINQ extensions
-- .NET6 xoshiro256** Random
 - Vector3 extensions
 
 # Examples

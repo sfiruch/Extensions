@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Timers;
 using Microsoft.Win32.SafeHandles;
 using Windows.Win32;
 using Windows.Win32.System.Console;
@@ -12,7 +14,7 @@ public class Log
 {
     public static readonly bool VTEnabled;
     public static bool VerboseEnabled = true;
-    private static SafeFileHandle? stdOutputHandle;
+    public static readonly Lock ConsoleLock = new Lock();
 
     static Log()
     {
@@ -30,17 +32,11 @@ public class Log
             {
                 var h = new SafeFileHandle(PInvoke.GetStdHandle(STD_HANDLE.STD_OUTPUT_HANDLE).Value, false);
                 if (!h.IsInvalid && PInvoke.GetConsoleMode(h, out var mode))
-                {
                     VTEnabled = PInvoke.SetConsoleMode(h, mode | CONSOLE_MODE.ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-                    stdOutputHandle = h;
-                }
             }
         }
         else
             VTEnabled = !Console.IsOutputRedirected;
-
-        if (VTEnabled)
-            Console.BufferHeight = 32766;
     }
 
     public static void SetTitle(string _x)
@@ -58,16 +54,14 @@ public class Log
     {
         set
         {
-            if (value < 0 || value > 1)
-                throw new ArgumentOutOfRangeException();
-
             if (!VTEnabled)
                 return;
 
-            if (value == 1)
-                Console.Write("\e]9;4;0;100\x07");
-            else
-                Console.Write($"\e]9;4;1;{(int)(value * 99)}\x07");
+            lock (ConsoleLock)
+                if (value >= 1)
+                    Console.Write("\e]9;4;0;100\x07");
+                else
+                    Console.Write($"\e]9;4;1;{(int)(Math.Max(0, value) * 99)}\x07");
         }
     }
 
@@ -75,7 +69,8 @@ public class Log
     public static void WriteLine(object? _o) => WriteLine(_o?.ToString());
     public static void WriteLine(string? _x)
     {
-        Console.WriteLine(_x);
+        lock (ConsoleLock)
+            Console.WriteLine(_x);
     }
 
     public static void VerboseLine() => VerboseLine("");
@@ -83,13 +78,15 @@ public class Log
     public static void VerboseLine(string? _x)
     {
         if (VerboseEnabled)
-            Console.WriteLine($"       > {_x}".StyleDarkYellow());
+            lock (ConsoleLock)
+                Console.WriteLine($"       > {_x}".StyleDarkYellow());
     }
 
     [Conditional("DEBUG")]
     public static void Debug(string _x)
     {
-        Console.WriteLine(_x);
+        lock (ConsoleLock)
+            Console.WriteLine(_x);
     }
 
     public static void LimitOutputTo(int? _lines = null)
@@ -97,48 +94,57 @@ public class Log
         if (!VTEnabled)
             return;
 
-        if (_lines is null)
+        lock (ConsoleLock)
         {
-            var cursorY = Console.CursorTop;
-            Console.Write("\e[;r");
-            Console.CursorTop = cursorY;
-            return;
-        }
+            if (statusLines.Count != 0)
+                throw new InvalidOperationException("Output limiting only supported while no status lines are shown.");
 
-        if (_lines < 1)
-            throw new ArgumentOutOfRangeException(nameof(_lines));
+            if (_lines is null)
+            {
+                var cursorY = Console.CursorTop;
+                Console.Write("\e[;r");
+                Console.CursorTop = cursorY;
+                return;
+            }
 
-        var lines = Math.Min(_lines.Value, Console.WindowHeight);
-        Console.Write(string.Join("", Enumerable.Repeat(Environment.NewLine, lines)));
+            if (_lines < 1)
+                throw new ArgumentOutOfRangeException(nameof(_lines));
 
-        {
-            var cursorY = Console.CursorTop;
-            var marginEnd = Math.Min(Console.WindowHeight, cursorY + 1);
-            Console.Write($"\e[{marginEnd - lines};{marginEnd}r");
-            Console.CursorTop = cursorY;
+            var lines = Math.Min(_lines.Value, Console.WindowHeight);
+            Console.Write(string.Join("", Enumerable.Repeat(Environment.NewLine, lines)));
+
+            {
+                var cursorY = Console.CursorTop;
+                var marginEnd = Math.Min(Console.WindowHeight, cursorY + 1);
+                Console.Write($"\e[{marginEnd - lines};{marginEnd}r");
+                Console.CursorTop = cursorY;
+            }
         }
     }
 
     private static readonly List<Line> statusLines = new();
-    public static Line AddStatusLine(string _text = "", string? _prefix = null)
+    public static Line AddStatusLine(string _text = "", string? _prefix = null, float? _progress = null)
     {
-        var newLine = new Line(_prefix, _text);
-        statusLines.Add(newLine);
-
-        using (var _ = new ConsoleStateRestorer())
+        lock (ConsoleLock)
         {
+            var newLine = new Line(_prefix, _text, _progress);
+            statusLines.Add(newLine);
+
+            using (var _ = new ConsoleStateRestorer())
+            {
+                if (statusLines.Count == 1)
+                    Console.Write($"\e[;r\e[1;H\e[1L\e[1;r\e[;r\e[2;H\e[1L\e[2;r");
+
+                Console.Write($"\e[;r\e[{2 + statusLines.Count};H\e[1L\e[{3 + statusLines.Count};r");
+                UpdateStatusLines();
+            }
+
             if (statusLines.Count == 1)
-                Console.Write($"\e[;r\e[1;H\e[1L\e[1;r\e[;r\e[2;H\e[1L\e[2;r");
-
-            Console.Write($"\e[;r\e[{2 + statusLines.Count};H\e[1L\e[{3 + statusLines.Count};r");
-            UpdateStatusLines();
+                Console.Write("\e[3B");
+            else
+                Console.Write("\e[B");
+            return newLine;
         }
-
-        if (statusLines.Count == 1)
-            Console.Write("\e[3B");
-        else
-            Console.Write("\e[B");
-        return newLine;
     }
 
     internal class ConsoleStateRestorer : IDisposable
@@ -175,42 +181,44 @@ public class Log
         }
     }
 
-
     private static void UpdateStatusLines()
     {
-        if (statusLines.Count == 0)
-            return;
-
-        void WriteLine(int row, string text)
-            => Console.Write($"\e[48;5;235m\e[{2 + row};H\e[2K\e[?7l {text}\e[?7h");
-
-        var barWidth = Math.Clamp(Console.WindowWidth / 4, 5, 30);
-
-        using var _ = new ConsoleStateRestorer();
-        WriteLine(-1, "");
-        for (var i = 0; i < statusLines.Count; i++)
+        lock (ConsoleLock)
         {
-            string progress = "";
-            if (statusLines[i].Progress is float p)
+            if (statusLines.Count == 0)
+                return;
+
+            void WriteLine(int row, string text)
+                => Console.Write($"\e[48;5;235m\e[{2 + row};H\e[2K\e[?7l {text}\e[?7h");
+
+            var barWidth = Math.Clamp(Console.WindowWidth / 4, 5, 30);
+
+            using var _ = new ConsoleStateRestorer();
+            WriteLine(-1, "");
+            for (var i = 0; i < statusLines.Count; i++)
             {
-                var barFilled = (int)Math.Round(p * barWidth);
+                string progress = "";
+                if (statusLines[i].Progress is float p)
+                {
+                    var barFilled = (int)Math.Round(p * barWidth);
 
-                var firstPart = $"{p,4:P0} {new string('━', barFilled)}";
-                if (p == 1)
-                    firstPart = firstPart.StyleBrightGreen();
-                else
-                    firstPart = firstPart.StyleOrange();
+                    var firstPart = $"{p,4:P0} {new string('━', barFilled)}";
+                    if (p == 1)
+                        firstPart = firstPart.StyleBrightGreen();
+                    else
+                        firstPart = firstPart.StyleOrange();
 
-                progress = $"{firstPart}{new string('━', barWidth - barFilled)} ";
+                    progress = $"{firstPart}{new string('━', barWidth - barFilled)} ";
+                }
+
+                var text = $"{progress}{statusLines[i].Text}";
+                if (statusLines[i].Prefix is not null)
+                    text = $"{statusLines[i].Prefix}: {text}";
+
+                WriteLine(i, text);
             }
-
-            var text = $"{progress}{statusLines[i].Text}";
-            if (statusLines[i].Prefix is not null)
-                text = $"{statusLines[i].Prefix}: {text}";
-
-            WriteLine(i, text);
+            WriteLine(statusLines.Count, "");
         }
-        WriteLine(statusLines.Count, "");
     }
 
     public class Line : IDisposable
@@ -219,10 +227,22 @@ public class Log
         string _Text;
         float? _Progress;
 
-        internal Line(string? _prefix, string _text)
+        private static volatile System.Threading.Timer? UpdateTimer = null;
+
+        internal Line(string? _prefix, string _text, float? _progress)
         {
             _Prefix = _prefix?.Replace('\n', ' ');
             _Text = _text.Replace('\n', ' ');
+            _Progress = _progress;
+        }
+
+        private static void AsyncUpdate()
+        {
+            UpdateTimer ??= new System.Threading.Timer(_ =>
+            {
+                UpdateTimer = null;
+                UpdateStatusLines();
+            }, null, 50, Timeout.Infinite);
         }
 
         public string? Prefix
@@ -231,7 +251,7 @@ public class Log
             set
             {
                 _Prefix = value?.Replace('\n', ' ');
-                UpdateStatusLines();
+                AsyncUpdate();
             }
         }
 
@@ -241,7 +261,7 @@ public class Log
             set
             {
                 _Text = value.Replace('\n', ' ');
-                UpdateStatusLines();
+                AsyncUpdate();
             }
         }
 
@@ -254,29 +274,40 @@ public class Log
                     _Progress = null;
                 else
                     _Progress = Math.Clamp(value.Value, 0, 1);
-                UpdateStatusLines();
+                AsyncUpdate();
             }
         }
 
         public void Dispose() => Remove();
 
-        public void Remove()
+        public void Remove(TimeSpan? Delay = null)
         {
-            var index = statusLines.IndexOf(this);
-            if (index == -1)
-                return;
+            Delay ??= TimeSpan.FromSeconds(2);
 
-            using var _ = new ConsoleStateRestorer(-1);
-            statusLines.RemoveAt(index);
-            Console.WriteLine($"\e[;r\e[{3 + index};H\e[1M\e[{3 + statusLines.Count};r");
-
-            if (statusLines.Count == 0)
+            if (Delay.Value != TimeSpan.Zero)
             {
-                Console.WriteLine($"\e[;r\e[2;H\e[1M\e[3;r");
-                Console.WriteLine($"\e[;r\e[1;H\e[1M\e[2;r");
+                new System.Threading.Timer(_ => Remove(TimeSpan.Zero), null, Delay.Value, Timeout.InfiniteTimeSpan);
+                return;
             }
 
-            UpdateStatusLines();
+            lock (ConsoleLock)
+            {
+                var index = statusLines.IndexOf(this);
+                if (index == -1)
+                    return;
+
+                using var _ = new ConsoleStateRestorer(-1);
+                statusLines.RemoveAt(index);
+                Console.WriteLine($"\e[;r\e[{3 + index};H\e[1M\e[{3 + statusLines.Count};r");
+
+                if (statusLines.Count == 0)
+                {
+                    Console.WriteLine($"\e[;r\e[2;H\e[1M\e[3;r");
+                    Console.WriteLine($"\e[;r\e[1;H\e[1M\e[2;r");
+                }
+
+                UpdateStatusLines();
+            }
         }
     }
 
