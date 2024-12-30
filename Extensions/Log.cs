@@ -162,8 +162,7 @@ public class Log
                 Top = 0;
             Foreground = Console.ForegroundColor;
             Background = Console.BackgroundColor;
-
-            Console.Write("\e[?25l");
+            Console.Write("\e[39m\e[?25l");
         }
 
         public void Dispose()
@@ -189,7 +188,7 @@ public class Log
                 return;
 
             void WriteLine(int row, string text)
-                => Console.Write($"\e[48;5;235m\e[{2 + row};H\e[2K\e[?7l {text}\e[?7h");
+                => Console.Write($"\e[48;5;235m\e[{2 + row};H\e[2K\e[?7l{text}\e[?7h");
 
             var barWidth = Math.Clamp(Console.WindowWidth / 4, 5, 30);
 
@@ -203,29 +202,55 @@ public class Log
                     var barFilled = (int)Math.Round(p * barWidth);
 
                     var firstPart = $"{p,4:P0} {new string('━', barFilled)}";
-                    if (p == 1)
-                        firstPart = firstPart.StyleBrightGreen();
-                    else
-                        firstPart = firstPart.StyleOrange();
 
-                    progress = $"{firstPart}{new string('━', barWidth - barFilled)} ";
+                    var secondPart = new string('━', barWidth - barFilled);
+
+                    if (statusLines[i].Active)
+                    {
+                        if (p >= 0.995)
+                            firstPart = firstPart.StyleBrightGreen();
+                        else
+                            firstPart = firstPart.StyleOrange();
+                    }
+                    else
+                    {
+                        if (p >= 0.995)
+                            firstPart = firstPart.StyleDarkGreen();
+                        else
+                            firstPart = firstPart.StyleDarkYellow();
+                        secondPart = secondPart.StyleDarkGray();
+                    }
+
+                    progress = $"{firstPart}{secondPart} ";
                 }
 
-                var text = $"{progress}{statusLines[i].Text}";
-                if (statusLines[i].Prefix is not null)
-                    text = $"{statusLines[i].Prefix}: {text}";
+                string text;
+                if (statusLines[i].Active)
+                {
+                    text = $"{progress}{statusLines[i].Text}";
+                    if (statusLines[i].Prefix is not null)
+                        text = $"{statusLines[i].Prefix}: {text}";
+                }
+                else
+                {
+                    text = $"{progress}{statusLines[i].Text.StyleDarkGray()}";
+                    if (statusLines[i].Prefix is not null)
+                        text = $"{statusLines[i].Prefix.StyleDarkGray()}: {text}";
+                }
 
-                WriteLine(i, text);
+                WriteLine(i, $" {text} ");
             }
+
             WriteLine(statusLines.Count, "");
         }
     }
 
     public class Line : IDisposable
     {
-        string? _Prefix;
-        string _Text;
-        float? _Progress;
+        private string? _Prefix;
+        private string _Text;
+        private float? _Progress;
+        internal bool Active = true;
 
         private static volatile System.Threading.Timer? UpdateTimer = null;
 
@@ -282,6 +307,7 @@ public class Log
 
         public void Remove(TimeSpan? Delay = null)
         {
+            Active = false;
             Delay ??= TimeSpan.FromSeconds(2);
 
             if (Delay.Value != TimeSpan.Zero)

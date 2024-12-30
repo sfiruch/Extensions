@@ -20,6 +20,8 @@ public static class StringExtensions
     [return: NotNullIfNotNull("_s")] public static string? StyleBrightCyan(this string? _s) => Log.VTEnabled ? $"\e[96m{_s}\e[39m" : _s;
     [return: NotNullIfNotNull("_s")] public static string? StyleBrightWhite(this string? _s) => Log.VTEnabled ? $"\e[97m{_s}\e[39m" : _s;
 
+    [return: NotNullIfNotNull("_s")] public static string? StyleDarkGray(this string? _s) => Log.VTEnabled ? $"\e[90m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleLightGray(this string? _s) => Log.VTEnabled ? $"\e[37m{_s}\e[39m" : _s;
     [return: NotNullIfNotNull("_s")] public static string? StyleOrange(this string? _s) => Log.VTEnabled ? $"\e[38;5;214m{_s}\e[39m" : _s;
 
     [return: NotNullIfNotNull("_s")] public static string? Style(this string? _s, bool _underline = false, bool _italic = false, bool _bold = false, bool _strikethrough = false) => Log.VTEnabled ? $"\e[{(_bold ? "1" : "")}{(_underline ? "4" : "")}{(_italic ? "3" : "")}{(_strikethrough ? "9" : "")}m{_s}\e[m" : _s;

@@ -48,6 +48,7 @@ for (var i=0; ; i++)
         l3=Log.AddStatusLine(DateTime.Now.ToString());
 
     l1.Progress = 0.5f+ 0.6f*MathF.Sin(i/5f);
+    l3.Progress = 0.7f + 0.8f * MathF.Sin(i / 4f);
 
     Console.WriteLine(i);
 }
