@@ -251,6 +251,7 @@ public class Log
         private string _Text;
         private float? _Progress;
         internal bool Active = true;
+        private System.Threading.Timer? RemovalTimer;
 
         private static volatile System.Threading.Timer? UpdateTimer = null;
 
@@ -312,7 +313,7 @@ public class Log
 
             if (Delay.Value != TimeSpan.Zero)
             {
-                new System.Threading.Timer(_ => Remove(TimeSpan.Zero), null, Delay.Value, Timeout.InfiniteTimeSpan);
+                RemovalTimer ??= new System.Threading.Timer(_ => Remove(TimeSpan.Zero), null, Delay.Value, Timeout.InfiniteTimeSpan);
                 return;
             }
 
@@ -334,6 +335,8 @@ public class Log
 
                 UpdateStatusLines();
             }
+
+            RemovalTimer?.Dispose();
         }
     }
 
