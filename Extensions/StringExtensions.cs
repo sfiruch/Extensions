@@ -1,31 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Diagnostics.CodeAnalysis;
 
 public static class StringExtensions
 {
-    [return: NotNullIfNotNull("_s")] public static string? StyleDarkRed(this string? _s) => Log.VTEnabled ? $"\u001b[31m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleDarkGreen(this string? _s) => Log.VTEnabled ? $"\u001b[32m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleDarkYellow(this string? _s) => Log.VTEnabled ? $"\u001b[33m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleDarkBlue(this string? _s) => Log.VTEnabled ? $"\u001b[34m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleDarkMagenta(this string? _s) => Log.VTEnabled ? $"\u001b[35m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleDarkCyan(this string? _s) => Log.VTEnabled ? $"\u001b[36m{_s}\u001b[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleDarkRed(this string? _s) => Log.VTEnabled ? $"\e[31m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleDarkGreen(this string? _s) => Log.VTEnabled ? $"\e[32m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleDarkYellow(this string? _s) => Log.VTEnabled ? $"\e[33m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleDarkBlue(this string? _s) => Log.VTEnabled ? $"\e[34m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleDarkMagenta(this string? _s) => Log.VTEnabled ? $"\e[35m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleDarkCyan(this string? _s) => Log.VTEnabled ? $"\e[36m{_s}\e[39m" : _s;
 
-    [return: NotNullIfNotNull("_s")] public static string? StyleBrightRed(this string? _s) => Log.VTEnabled ? $"\u001b[91m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleBrightGreen(this string? _s) => Log.VTEnabled ? $"\u001b[92m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleBrightYellow(this string? _s) => Log.VTEnabled ? $"\u001b[93m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleBrightBlue(this string? _s) => Log.VTEnabled ? $"\u001b[94m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleBrightMagenta(this string? _s) => Log.VTEnabled ? $"\u001b[95m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleBrightCyan(this string? _s) => Log.VTEnabled ? $"\u001b[96m{_s}\u001b[39m" : _s;
-    [return: NotNullIfNotNull("_s")] public static string? StyleBrightWhite(this string? _s) => Log.VTEnabled ? $"\u001b[97m{_s}\u001b[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleBrightRed(this string? _s) => Log.VTEnabled ? $"\e[91m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleBrightGreen(this string? _s) => Log.VTEnabled ? $"\e[92m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleBrightYellow(this string? _s) => Log.VTEnabled ? $"\e[93m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleBrightBlue(this string? _s) => Log.VTEnabled ? $"\e[94m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleBrightMagenta(this string? _s) => Log.VTEnabled ? $"\e[95m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleBrightCyan(this string? _s) => Log.VTEnabled ? $"\e[96m{_s}\e[39m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleBrightWhite(this string? _s) => Log.VTEnabled ? $"\e[97m{_s}\e[39m" : _s;
 
-    [return: NotNullIfNotNull("_s")] public static string? Style(this string? _s, bool _underline = false, bool _italic = false, bool _bold = false, bool _strikethrough = false) => Log.VTEnabled ? $"\u001b[{(_bold ? "1" : "")}{(_underline ? "4" : "")}{(_italic ? "3" : "")}{(_strikethrough ? "9" : "")}m{_s}\u001b[m" : _s;
+    [return: NotNullIfNotNull("_s")] public static string? StyleOrange(this string? _s) => Log.VTEnabled ? $"\e[38;5;214m{_s}\e[39m" : _s;
+
+    [return: NotNullIfNotNull("_s")] public static string? Style(this string? _s, bool _underline = false, bool _italic = false, bool _bold = false, bool _strikethrough = false) => Log.VTEnabled ? $"\e[{(_bold ? "1" : "")}{(_underline ? "4" : "")}{(_italic ? "3" : "")}{(_strikethrough ? "9" : "")}m{_s}\e[m" : _s;
 
     public static string FixLengthToAndKeepFormatting(this string _s, int _length)
     {
@@ -34,7 +31,7 @@ public static class StringExtensions
             var inVT = false;
             foreach (var ch in _s)
             {
-                inVT |= (ch == '\u001b');
+                inVT |= (ch == '\e');
 
                 if (!inVT)
                     len++;
@@ -54,7 +51,7 @@ public static class StringExtensions
             var inVT = false;
             foreach (var ch in _s)
             {
-                inVT |= (ch == '\u001b');
+                inVT |= (ch == '\e');
 
                 if (inVT)
                     res.Append(ch);
