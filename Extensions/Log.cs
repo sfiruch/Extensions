@@ -130,19 +130,23 @@ public class Log
             var newLine = new Line(_prefix, _text, _progress);
             statusLines.Add(newLine);
 
-            using (var _ = new ConsoleStateRestorer())
+            if (VTEnabled)
             {
-                if (statusLines.Count == 1)
-                    Console.Write($"\e[;r\e[1;H\e[1L\e[1;r\e[;r\e[2;H\e[1L\e[2;r");
+                using (var _ = new ConsoleStateRestorer())
+                {
+                    if (statusLines.Count == 1)
+                        Console.Write($"\e[;r\e[1;H\e[1L\e[1;r\e[;r\e[2;H\e[1L\e[2;r");
 
-                Console.Write($"\e[;r\e[{2 + statusLines.Count};H\e[1L\e[{3 + statusLines.Count};r");
-                UpdateStatusLines();
+                    Console.Write($"\e[;r\e[{2 + statusLines.Count};H\e[1L\e[{3 + statusLines.Count};r");
+                    UpdateStatusLines();
+                }
+
+                if (statusLines.Count == 1)
+                    Console.Write("\e[3B");
+                else
+                    Console.Write("\e[B");
             }
 
-            if (statusLines.Count == 1)
-                Console.Write("\e[3B");
-            else
-                Console.Write("\e[B");
             return newLine;
         }
     }
@@ -195,51 +199,7 @@ public class Log
             using var _ = new ConsoleStateRestorer();
             WriteLine(-1, "");
             for (var i = 0; i < statusLines.Count; i++)
-            {
-                string progress = "";
-                if (statusLines[i].Progress is float p)
-                {
-                    var barFilled = (int)Math.Round(p * barWidth);
-
-                    var firstPart = $"{p,4:P0} {new string('━', barFilled)}";
-
-                    var secondPart = new string('━', barWidth - barFilled);
-
-                    if (statusLines[i].Active)
-                    {
-                        if (p >= 0.995)
-                            firstPart = firstPart.StyleBrightGreen();
-                        else
-                            firstPart = firstPart.StyleOrange();
-                    }
-                    else
-                    {
-                        if (p >= 0.995)
-                            firstPart = firstPart.StyleDarkGreen();
-                        else
-                            firstPart = firstPart.StyleDarkYellow();
-                        secondPart = secondPart.StyleDarkGray();
-                    }
-
-                    progress = $"{firstPart}{secondPart} ";
-                }
-
-                string text;
-                if (statusLines[i].Active)
-                {
-                    text = $"{progress}{statusLines[i].Text}";
-                    if (statusLines[i].Prefix is not null)
-                        text = $"{statusLines[i].Prefix}: {text}";
-                }
-                else
-                {
-                    text = $"{progress}{statusLines[i].Text.StyleDarkGray()}";
-                    if (statusLines[i].Prefix is not null)
-                        text = $"{statusLines[i].Prefix.StyleDarkGray()}: {text}";
-                }
-
-                WriteLine(i, $" {text} ");
-            }
+                WriteLine(i, $" {statusLines[i].GetConsoleText(barWidth)} ");
 
             WriteLine(statusLines.Count, "");
         }
@@ -254,21 +214,80 @@ public class Log
         private System.Threading.Timer? RemovalTimer;
 
         private static volatile System.Threading.Timer? UpdateTimer = null;
+        private volatile System.Threading.Timer? UpdateLineTimer = null;
 
         internal Line(string? _prefix, string _text, float? _progress)
         {
             _Prefix = _prefix?.Replace('\n', ' ');
             _Text = _text.Replace('\n', ' ');
             _Progress = _progress;
+
+            if (!VTEnabled)
+                AsyncUpdate();
         }
 
-        private static void AsyncUpdate()
+        internal string GetConsoleText(int barWidth)
         {
-            UpdateTimer ??= new System.Threading.Timer(_ =>
+            string progress = "";
+            if (Progress is float p)
             {
-                UpdateTimer = null;
-                UpdateStatusLines();
-            }, null, 50, Timeout.Infinite);
+                var barFilled = (int)Math.Round(p * barWidth);
+
+                var firstPart = $"{p,4:P0} {new string(VTEnabled ? '━' : '#', barFilled)}";
+
+                var secondPart = new string(VTEnabled ? '━' : '.', barWidth - barFilled);
+
+                if (Active)
+                {
+                    if (p >= 0.995)
+                        firstPart = firstPart.StyleBrightGreen();
+                    else
+                        firstPart = firstPart.StyleOrange();
+                }
+                else
+                {
+                    if (p >= 0.995)
+                        firstPart = firstPart.StyleDarkGreen();
+                    else
+                        firstPart = firstPart.StyleDarkYellow();
+                    secondPart = secondPart.StyleDarkGray();
+                }
+
+                progress = $"{firstPart}{secondPart} ";
+            }
+
+            string text;
+            if (Active)
+            {
+                text = $"{progress}{Text}";
+                if (Prefix is not null)
+                    text = $"{Prefix}: {text}";
+            }
+            else
+            {
+                text = $"{progress}{Text.StyleDarkGray()}";
+                if (Prefix is not null)
+                    text = $"{Prefix.StyleDarkGray()}: {text}";
+            }
+            return text;
+        }
+
+        private void AsyncUpdate()
+        {
+            if (VTEnabled)
+                UpdateTimer ??= new System.Threading.Timer(_ =>
+                {
+                    UpdateTimer = null;
+                    UpdateStatusLines();
+                }, null, 50, Timeout.Infinite);
+            else
+                UpdateLineTimer ??= new System.Threading.Timer(_ =>
+                {
+                    UpdateLineTimer = null;
+
+                    lock (ConsoleLock)
+                        Console.WriteLine(GetConsoleText(8));
+                }, null, 250, Timeout.Infinite);
         }
 
         public string? Prefix
@@ -276,8 +295,10 @@ public class Log
             get => _Prefix;
             set
             {
+                var oldValue = _Prefix;
                 _Prefix = value?.Replace('\n', ' ');
-                AsyncUpdate();
+                if (_Prefix != oldValue)
+                    AsyncUpdate();
             }
         }
 
@@ -286,8 +307,10 @@ public class Log
             get => _Text;
             set
             {
+                var oldValue = _Text;
                 _Text = value.Replace('\n', ' ');
-                AsyncUpdate();
+                if (oldValue != _Text)
+                    AsyncUpdate();
             }
         }
 
@@ -296,11 +319,14 @@ public class Log
             get => _Progress;
             set
             {
+                var oldValue = _Progress;
                 if (value is null)
                     _Progress = null;
                 else
                     _Progress = Math.Clamp(value.Value, 0, 1);
-                AsyncUpdate();
+
+                if (oldValue != _Progress)
+                    AsyncUpdate();
             }
         }
 
@@ -309,6 +335,16 @@ public class Log
         public void Remove(TimeSpan? Delay = null)
         {
             Active = false;
+
+            if (!VTEnabled)
+            {
+                lock (ConsoleLock)
+                {
+                    statusLines.Remove(this);
+                    return;
+                }
+            }
+
             Delay ??= TimeSpan.FromSeconds(2);
 
             if (Delay.Value != TimeSpan.Zero)
@@ -323,8 +359,9 @@ public class Log
                 if (index == -1)
                     return;
 
-                using var _ = new ConsoleStateRestorer(-1);
                 statusLines.RemoveAt(index);
+
+                using var _ = new ConsoleStateRestorer(-1);
                 Console.WriteLine($"\e[;r\e[{3 + index};H\e[1M\e[{3 + statusLines.Count};r");
 
                 if (statusLines.Count == 0)
