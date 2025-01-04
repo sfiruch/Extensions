@@ -146,6 +146,8 @@ public class Log
                 else
                     Console.Write("\e[B");
             }
+            else
+                newLine.AsyncUpdate();
 
             return newLine;
         }
@@ -160,6 +162,9 @@ public class Log
 
         internal ConsoleStateRestorer(int _yOffset = 0)
         {
+            if (!VTEnabled)
+                return;
+
             (Left, Top) = Console.GetCursorPosition();
             Top += _yOffset;
             if (Top < 0)
@@ -171,6 +176,9 @@ public class Log
 
         public void Dispose()
         {
+            if (!VTEnabled)
+                return;
+
             try
             {
                 Console.SetCursorPosition(Left, Top);
@@ -272,7 +280,7 @@ public class Log
             return text;
         }
 
-        private void AsyncUpdate()
+        internal void AsyncUpdate()
         {
             if (VTEnabled)
                 UpdateTimer ??= new System.Threading.Timer(_ =>
