@@ -3,25 +3,58 @@ name: .NET
 on:
   push:
     branches: [ master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ master ]
 
 jobs:
   build:
-
+    if: "!startsWith(github.ref, 'refs/tags/v')"
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
-    - name: Restore dependencies
-      run: dotnet restore
+        dotnet-version: '10.0.x'
     - name: Build Extensions-SG
-      run: dotnet build --no-restore Extensions-SG
+      run: dotnet build Extensions-SG -c Release
     - name: Build Extensions
-      run: dotnet build --no-restore Extensions
-#    - name: Test
-#      run: dotnet test --no-build --verbosity normal
+      run: dotnet build Extensions -c Release
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    permissions:
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Get Version
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: NuGet login (OIDC → temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: deiruch
+
+    - name: Build Extensions-SG
+      run: dotnet build Extensions-SG -c Release
+    - name: Build Extensions
+      run: dotnet build Extensions -c Release
+
+    - name: Pack
+      run: dotnet pack Extensions/Extensions.csproj -c Release -o out --no-build -p:Version=${{ steps.get_version.outputs.VERSION }}
+
+    - name: Push to NuGet
+      run: dotnet nuget push out/*.nupkg --api-key ${{steps.login.outputs.NUGET_API_KEY}} -s https://api.nuget.org/v3/index.json
