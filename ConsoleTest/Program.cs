@@ -1,4 +1,4 @@
-﻿for (var i = 0; i < 10; i++)
+for (var i = 0; i < 10; i++)
     Console.WriteLine($"> {i}");
 
 Log.Progress = 0;
@@ -34,7 +34,7 @@ l3.Text = "line 1\nline 2\nline 3\nline 4\nline 5";
 
 Log.Progress = 0.9f;
 
-for (var i=0; ; i++)
+for (var i = 0; ; i++)
 {
     l2.Text = "---------------------------------------------------" + DateTime.Now.ToString();
     l5.Text = "Last - " + DateTime.Now.ToString();
@@ -42,13 +42,14 @@ for (var i=0; ; i++)
 
     Log.Progress = 1f;
 
-    if((i%30)==10)
+    if ((i % 30) == 10)
         l3.Remove();
     if ((i % 30) == 25)
-        l3=Log.AddStatusLine(DateTime.Now.ToString());
+        l3 = Log.AddStatusLine(DateTime.Now.ToString());
 
-    l1.Progress = 0.5f+ 0.6f*MathF.Sin(i/5f);
+    l1.Progress = 0.5f + 0.6f * MathF.Sin(i / 5f);
     l3.Progress = 0.7f + 0.8f * MathF.Sin(i / 4f);
 
-    Console.WriteLine(i);
+    if (i % 4 == 0)
+        Console.WriteLine(i / 4);
 }
