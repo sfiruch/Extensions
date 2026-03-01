@@ -141,10 +141,12 @@ public class Log
                     UpdateStatusLines();
                 }
 
-                if (statusLines.Count == 1)
-                    Console.Write("\e[3B");
-                else
-                    Console.Write("\e[B");
+                var linesToMove = statusLines.Count == 1 ? 3 : 1;
+                var scrollNeeded = Math.Max(0, Console.CursorTop + linesToMove - (Console.WindowHeight - 1));
+                if (scrollNeeded > 0)
+                    Console.Write($"\e[{scrollNeeded}S");
+                if (linesToMove > scrollNeeded)
+                    Console.Write($"\e[{linesToMove - scrollNeeded}B");
             }
             else
                 newLine.AsyncUpdate();
